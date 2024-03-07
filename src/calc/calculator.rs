@@ -50,15 +50,15 @@ impl<TView> TestCalculator<TView> where TView:CalculatorView, {
 
 pub struct TestCalculator2<TView> {
     pub value: f64,
-    pub view: Option<Weak<TView>>,
+    pub view: Weak<TView>,
 }
 
 
 impl<TView> TestCalculator2<TView> {
-    pub fn new() -> Self {
+    pub fn new(view: &Weak<TView>) -> Self {
         Self {
             value: 0.0,
-            view: None,
+            view : view.clone(),
         }
     }
 }

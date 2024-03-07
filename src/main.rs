@@ -19,7 +19,6 @@ struct CalcView {
     /// The number displayed. Generally a valid float.
     value: String,
     history: String,
-    caculator: Rc<TestCalculator2<CalcView>>,
 }
 
 impl CalculatorView for CalcView {
@@ -188,6 +187,26 @@ fn build_calc() -> impl Widget<CalcView> {
         )
 }
 
+struct Test {
+    /// The number displayed. Generally a valid float.
+    value: String,
+    history: String,
+    caclulator: TestCalculator2<Test>,
+}
+
+impl Test {
+    fn new() -> Rc<Self> {
+        Rc::new_cyclic(|me| {
+            // Create the actual struct here.
+            Test { 
+                value: "0".to_string(),
+                history: String::new(),
+                caclulator: TestCalculator2::new(me),
+            }
+        })
+    }
+}
+
 pub fn main() {
     let window = WindowDesc::new(build_calc())
         .window_size((223., 300.))
@@ -196,11 +215,12 @@ pub fn main() {
             LocalizedString::new("calc-demo-window-title").with_placeholder("Simple Calculator"),
         );
 
-    let testCalculator2 = TestCalculator2::new();
+
+    let test = Test::new();
+
     let calc_state: CalcView = CalcView {
         value: "0".to_string(),
         history: String::new(),
-        caculator: Rc::new(testCalculator2),
     };
 
     AppLauncher::with_window(window)
