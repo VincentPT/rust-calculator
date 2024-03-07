@@ -6,6 +6,7 @@ use calc::calculator::Calculator;
 use calc::calculator::CalculatorView;
 
 use calc::calculator::TestCalculator;
+use calc::calculator::TestCalculator2;
 use druid::{
     theme, AppLauncher, Color, Data, Lens, LocalizedString, RenderContext, Widget, WidgetExt,
     WindowDesc,
@@ -18,6 +19,7 @@ struct CalcView {
     /// The number displayed. Generally a valid float.
     value: String,
     history: String,
+    caculator: Rc<TestCalculator2<CalcView>>,
 }
 
 impl CalculatorView for CalcView {
@@ -193,20 +195,13 @@ pub fn main() {
         .title(
             LocalizedString::new("calc-demo-window-title").with_placeholder("Simple Calculator"),
         );
-    let mut calc_state: CalcView = CalcView {
+
+    let testCalculator2 = TestCalculator2::new();
+    let calc_state: CalcView = CalcView {
         value: "0".to_string(),
         history: String::new(),
+        caculator: Rc::new(testCalculator2),
     };
-
-    let calc_state2: CalcView = CalcView {
-        value: "0".to_string(),
-        history: String::new(),
-    };
-
-    let mut calc = Calculator::new(&mut calc_state);
-
-    let calc_statePtr = Rc::new(calc_state2);
-    let testCacuator = TestCalculator::new(calc_statePtr.clone());
 
     AppLauncher::with_window(window)
         .log_to_console()

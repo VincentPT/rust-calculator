@@ -46,3 +46,19 @@ impl<TView> TestCalculator<TView> where TView:CalculatorView, {
         view.set_result("Hello".to_string());    
     }
 }
+
+
+pub struct TestCalculator2<TView> {
+    pub value: f64,
+    pub view: Option<Weak<TView>>,
+}
+
+
+impl<TView> TestCalculator2<TView> {
+    pub fn new() -> Self {
+        Self {
+            value: 0.0,
+            view: None,
+        }
+    }
+}
