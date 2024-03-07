@@ -1,7 +1,11 @@
 mod calc;
 
-use calc::calculator::Calculator;
+use std::rc::Rc;
 
+use calc::calculator::Calculator;
+use calc::calculator::CalculatorView;
+
+use calc::calculator::TestCalculator;
 use druid::{
     theme, AppLauncher, Color, Data, Lens, LocalizedString, RenderContext, Widget, WidgetExt,
     WindowDesc,
@@ -14,22 +18,32 @@ struct CalcView {
     /// The number displayed. Generally a valid float.
     value: String,
     history: String,
-    calculator: Calculator,
 }
 
-impl Data for Calculator {
-    fn same(&self, _: &Self) -> bool {
-        false
+impl CalculatorView for CalcView {
+    fn set_result(self: &mut Self, result: String) {
+        self.value = result;
+    }
+
+    fn set_history(self: &mut Self, history: String) {
+        self.history = history;
     }
 }
 
-impl Clone for Calculator {
-    fn clone(&self) -> Self {
-        Self {
-            value: self.value,
-        }
-    }
-}
+// impl Data for Calculator<'a, CalcView> {
+//     fn same(&self, _: &Self) -> bool {
+//         false
+//     }
+// }
+
+// impl Clone for Calculator<'a, CalcView> {
+//     fn clone(&self) -> Self {
+//         Self {
+//             value: self.value,
+//             view: self.view,
+//         }
+//     }
+// }
 
 impl CalcView {
     fn digit(&mut self, digit: u8) {
@@ -179,13 +193,25 @@ pub fn main() {
         .title(
             LocalizedString::new("calc-demo-window-title").with_placeholder("Simple Calculator"),
         );
-    let calc_state = CalcView {
+    let mut calc_state: CalcView = CalcView {
         value: "0".to_string(),
         history: String::new(),
-        calculator: Calculator::new(),
     };
+
+    let calc_state2: CalcView = CalcView {
+        value: "0".to_string(),
+        history: String::new(),
+    };
+
+    let mut calc = Calculator::new(&mut calc_state);
+
+    let calc_statePtr = Rc::new(calc_state2);
+    let testCacuator = TestCalculator::new(calc_statePtr.clone());
+
     AppLauncher::with_window(window)
         .log_to_console()
         .launch(calc_state)
         .expect("launch failed");
+
+
 }
