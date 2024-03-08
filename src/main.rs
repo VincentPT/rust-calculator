@@ -21,18 +21,9 @@ struct AppData {
 
 
 impl AppData {
-    fn digit(&mut self, digit: u8) {
-    }
-
-    fn display(&mut self) {
-    }
-
-    fn compute(&mut self) {
-    }
-
-    fn op(&mut self, op: char) {
+    fn on_key(&mut self, key: String) {
         let mut caculator = self.caculator.borrow_mut();
-        let state = caculator.push_input(op);
+        let state: (Option<String>, Option<String>) = caculator.push_input(key);
         match state.0 {
             Some(history) => self.history = history,
             None => {}
@@ -45,7 +36,7 @@ impl AppData {
     }
 }
 
-fn op_button_label(op: char, label: String) -> impl Widget<AppData> {
+fn op_button_label(label: String) -> impl Widget<AppData> {
     let painter = Painter::new(|ctx, _, env| {
         let bounds = ctx.size().to_rect();
 
@@ -60,19 +51,19 @@ fn op_button_label(op: char, label: String) -> impl Widget<AppData> {
         }
     });
 
-    Label::new(label)
+    Label::new(label.clone())
         .with_text_size(24.)
         .center()
         .background(painter)
         .expand()
-        .on_click(move |_ctx, data: &mut AppData, _env| data.op(op))
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_key(label.clone()))
 }
 
 fn op_button(op: char) -> impl Widget<AppData> {
-    op_button_label(op, op.to_string())
+    op_button_label(op.to_string())
 }
 
-fn digit_button(digit: u8) -> impl Widget<AppData> {
+fn digit_button(digit: char) -> impl Widget<AppData> {
     let painter = Painter::new(|ctx, _, env| {
         let bounds = ctx.size().to_rect();
 
@@ -87,12 +78,12 @@ fn digit_button(digit: u8) -> impl Widget<AppData> {
         }
     });
 
-    Label::new(format!("{digit}"))
+    Label::new(digit.to_string())
         .with_text_size(24.)
         .center()
         .background(painter)
         .expand()
-        .on_click(move |_ctx, data: &mut AppData, _env| data.digit(digit))
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_key(digit.to_string()))
 }
 
 fn flex_row<T: Data>(
@@ -132,10 +123,10 @@ fn build_calc() -> impl Widget<AppData> {
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(
             flex_row(
-                op_button_label('c', "CE".to_string()),
+                op_button_label("CE".to_string()),
                 op_button('C'),                
-                op_button_label('s', "MS".to_string()),
-                op_button_label('s', "MR".to_string()),
+                op_button_label("MS".to_string()),
+                op_button_label("MR".to_string()),
                 op_button('⌫'),
             ),
             1.0,
@@ -143,10 +134,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)
         .with_flex_child(
             flex_row(
-                op_button_label('c', "sin".to_string()),
-                op_button_label('c', "cos".to_string()),
-                op_button_label('c', "tan".to_string()),
-                op_button_label('c', "⅟x".to_string()),
+                op_button_label("sin".to_string()),
+                op_button_label("cos".to_string()),
+                op_button_label("tan".to_string()),
+                op_button_label( "⅟x".to_string()),
                 op_button('÷'), //
             ),
             1.0,
@@ -154,10 +145,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)        
         .with_flex_child(
             flex_row(
-                digit_button(7),
-                digit_button(8),
-                digit_button(9),
-                op_button_label('i', "x²".to_string()),
+                digit_button('7'),
+                digit_button('8'),
+                digit_button('9'),
+                op_button_label("x²".to_string()),
                 op_button('×'),
             ),
             1.0,
@@ -165,10 +156,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)
         .with_flex_child(
             flex_row(
-                digit_button(4),
-                digit_button(5),
-                digit_button(6),
-                op_button_label('i', "√".to_string()),
+                digit_button('4'),
+                digit_button('5'),
+                digit_button('6'),
+                op_button_label("√".to_string()),
                 op_button('−'),
             ),
             1.0,
@@ -176,10 +167,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)
         .with_flex_child(
             flex_row(
-                digit_button(1),
-                digit_button(2),
-                digit_button(3),
-                op_button_label('i', "ln".to_string()),
+                digit_button('1'),
+                digit_button('2'),
+                digit_button('3'),
+                op_button_label("ln".to_string()),
                 op_button('+'),
             ),
             1.0,
@@ -187,10 +178,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)
         .with_flex_child(
             flex_row(
-                digit_button(0),
+                digit_button('0'),
                 op_button('.'),
                 op_button('e'),
-                op_button_label('i', "π".to_string()),
+                op_button_label("π".to_string()),
                 op_button('='),
             ),
             1.0,
