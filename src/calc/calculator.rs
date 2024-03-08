@@ -1,17 +1,18 @@
-trait CalculatorView {
-    fn set_result(&self, result: String);
-    fn set_history(&self, history: String);
-}
 pub struct Calculator {
-    pub value: f64,
-    //pub view: Rc<>,
+    pub count: u32,
 }
+
 
 impl Calculator {
     pub fn new() -> Self {
         Self {
-            value: 0.0,
-            //view: None
+            count: 0
         }
+    }
+
+    pub fn push_input(&mut self, input: char) -> (Option<String>, Option<String>) {
+        self.count += 1;
+        let history = self.count.to_string();
+        (Some(history), Some(input.to_string()))
     }
 }
