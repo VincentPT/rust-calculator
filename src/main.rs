@@ -3,7 +3,8 @@ mod calc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use calc::calculator::Calculator;
+use calc::Calculator;
+use calc::Feature;
 
 use druid::{
     theme, AppLauncher, Color, Data, Lens, LocalizedString, RenderContext, Widget, WidgetExt,
@@ -21,9 +22,9 @@ struct AppData {
 
 
 impl AppData {
-    fn on_key(&mut self, key: String) {
+    fn on_exp_key(&mut self, key: String) {
         let mut caculator = self.caculator.borrow_mut();
-        let state: (Option<String>, Option<String>) = caculator.push_input(key);
+        let state: (Option<String>, Option<String>) = caculator.perform_exp_input(key);
         match state.0 {
             Some(history) => self.history = history,
             None => {}
@@ -32,6 +33,19 @@ impl AppData {
             Some(value) => self.value = value,
             None => {}
             
+        }
+    }
+
+    fn on_feature_key(&mut self, feature: &Feature) {
+        let mut caculator = self.caculator.borrow_mut();
+        let state: (Option<String>, Option<String>) = caculator.perform_feature(feature);
+        match state.0 {
+            Some(history) => self.history = history,
+            None => {}
+        }
+        match state.1 {
+            Some(value) => self.value = value,
+            None => {}
         }
     }
 }
@@ -56,7 +70,41 @@ fn op_button_label(label: String) -> impl Widget<AppData> {
         .center()
         .background(painter)
         .expand()
-        .on_click(move |_ctx, data: &mut AppData, _env| data.on_key(label.clone()))
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_exp_key(label.clone()))
+}
+
+fn op_feature(feature: Feature) -> impl Widget<AppData> {
+    let painter = Painter::new(|ctx, _, env| {
+        let bounds = ctx.size().to_rect();
+
+        ctx.fill(bounds, &env.get(theme::PRIMARY_DARK));
+
+        if ctx.is_hot() {
+            ctx.stroke(bounds.inset(-0.5), &Color::WHITE, 1.0);
+        }
+
+        if ctx.is_active() {
+            ctx.fill(bounds, &env.get(theme::PRIMARY_LIGHT));
+        }
+    });
+
+    let label = match feature {
+        Feature::C => "C",
+        Feature::CE => "CE",
+        Feature::MS => "MS",
+        Feature::MR => "MR",
+        Feature::Eval => "=",
+        Feature::DEL => "⌫",
+    };
+
+    let label_str = label.to_string();
+
+    Label::new(label_str)
+        .with_text_size(24.)
+        .center()
+        .background(painter)
+        .expand()
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_feature_key(&feature))
 }
 
 fn op_button(op: char) -> impl Widget<AppData> {
@@ -83,7 +131,7 @@ fn digit_button(digit: char) -> impl Widget<AppData> {
         .center()
         .background(painter)
         .expand()
-        .on_click(move |_ctx, data: &mut AppData, _env| data.on_key(digit.to_string()))
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_exp_key(digit.to_string()))
 }
 
 fn flex_row<T: Data>(
@@ -123,11 +171,11 @@ fn build_calc() -> impl Widget<AppData> {
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(
             flex_row(
-                op_button_label("CE".to_string()),
-                op_button('C'),                
-                op_button_label("MS".to_string()),
-                op_button_label("MR".to_string()),
-                op_button('⌫'),
+                op_feature(Feature::CE),
+                op_feature(Feature::C),
+                op_feature(Feature::MS),
+                op_feature(Feature::MR),
+                op_feature(Feature::DEL),
             ),
             1.0,
         )
@@ -182,7 +230,7 @@ fn build_calc() -> impl Widget<AppData> {
                 op_button('.'),
                 op_button('e'),
                 op_button_label("π".to_string()),
-                op_button('='),
+                op_feature(Feature::Eval),
             ),
             1.0,
         )
