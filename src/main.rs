@@ -4,7 +4,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use calc::Calculator;
-use calc::Functions;
 use calc::Feature;
 
 use druid::{

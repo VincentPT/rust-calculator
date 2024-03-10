@@ -1,37 +1,39 @@
-use super::Context;
-use super::functions::FUNCTIONS;
+use super::functions::Functor;
 
-pub struct Evaluator<'a> {
+pub struct Evaluator {
     pub count: u32,
-    context: Context<'a>,
+    op_stack: Vec<Box<dyn Functor>>,
 }
 
-impl<'a> Evaluator<'a> {
+impl Evaluator {
     pub fn new() -> Self {
         Self {
             count: 0,
-            context: Context::new(),
+            op_stack: Vec::new()
         }
     }
 
-    pub fn evaluate(&mut self, input: &str) -> (Option<String>, Option<String>) {
-        let f = FUNCTIONS.get_functor();
-        match f {
-            Some(functor) => {
-                self.context.push_op(functor);
-            }
-            None => {}
-        };
+    fn push_op(&mut self, op: Box<dyn Functor>) {
+        self.op_stack.push(op);
+    }
 
-        match self.context.top_op() {
-            Some(op) => {
-                op.execute();
-            }
-            None => {}
-        }; 
-        self.count += 1;
-        let history = self.count.to_string();
-        let value = input.to_string();
-        (Some(history), Some(value))
+    fn pop_op(&mut self) {
+        self.op_stack.pop();
+    }
+
+    fn top_op(&self) -> Option<& Box<dyn Functor>> {
+        self.op_stack.last()
+    }
+
+    pub fn op_size(&self) -> usize {
+        self.op_stack.len()
+    }
+
+    pub fn evaluate(&mut self, input: &String) -> Option<f64> {
+        None
+    }
+
+    pub fn put_token(&mut self, token: &String) -> Option<f64> {
+        None
     }
 }

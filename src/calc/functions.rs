@@ -1,26 +1,29 @@
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 
+pub use usize as FunctionId;
+
 
 /// static function instances
 const ALL_FUNCTIONS: [&dyn Functor; 2] = [&Add{}, &Sub{}];
 
+
 // all function ids, function id must be index of corresponding function in ALL_FUNCTIONS
-const ID_ADD: usize = 0;
-const ID_SUB: usize = 1;
-const ID_MUL: usize = 2;
-const ID_DIV: usize = 3;
-const ID_MOD: usize = 4;
-const ID_POW: usize = 5;
-const ID_SQRT: usize = 6;
-const ID_ABS: usize = 7;
-const ID_NEG: usize = 8;
-const ID_SIN: usize = 9;
-const ID_COS: usize = 10;
-const ID_TAN: usize = 11;
-const ID_LN: usize = 12;
-const ID_OPEN_BRACKET: usize = 13;
-const ID_CLOSE_BRACKET: usize = 14;
+const ID_ADD: FunctionId = 0;
+const ID_SUB: FunctionId = 1;
+const ID_MUL: FunctionId = 2;
+const ID_DIV: FunctionId = 3;
+const ID_MOD: FunctionId = 4;
+const ID_POW: FunctionId = 5;
+const ID_SQRT: FunctionId = 6;
+const ID_ABS: FunctionId = 7;
+const ID_NEG: FunctionId = 8;
+const ID_SIN: FunctionId = 9;
+const ID_COS: FunctionId = 10;
+const ID_TAN: FunctionId = 11;
+const ID_LN: FunctionId = 12;
+const ID_OPEN_BRACKET: FunctionId = 13;
+const ID_CLOSE_BRACKET: FunctionId = 14;
 
 const PRIODITY_ADDITIVE: i32 = 6;
 const PRIODITY_MULTIPLICATIVE: i32 = 5;
@@ -30,7 +33,7 @@ const PRIODITY_UNARY_OP: i32 = 3;
 pub trait Functor {
     fn execute(&self);
     fn priority(&self) -> i32;
-    fn id(&self) -> usize;
+    fn id(&self) -> FunctionId;
 }
 
 
@@ -57,7 +60,7 @@ impl Functor for Add {
     fn execute(&self) {
         BinaryFunctor::execute(self);
     }
-    fn id(&self) -> usize {
+    fn id(&self) -> FunctionId {
         ID_ADD
     }
     fn priority(&self) -> i32 {
@@ -78,7 +81,7 @@ impl Functor for Sub {
     fn execute(&self) {
         BinaryFunctor::execute(self);
     }
-    fn id(&self) -> usize {
+    fn id(&self) -> FunctionId {
         ID_SUB
     }
     fn priority(&self) -> i32 {
@@ -92,26 +95,27 @@ impl BinaryFunctor for Sub {
     }
 }
 
-pub struct Functions {
-    function_idx_map: HashMap<String, usize>,
-    // pub sub: Sub,
-    // pub mul: Mul,
-    // pub div: Div,
+type FunctionCreator = fn(&String) -> Box<dyn Functor>;
+
+pub struct FunctionLib {
+    function_creator_map: HashMap<String, FunctionCreator>,
 }
 
-impl Functions {
+impl FunctionLib {
     pub fn new() -> Self {
-        let mut function_idx_map: HashMap<String, usize> = HashMap::new();
-        function_idx_map.insert("+".to_string(), ID_ADD);
+        let mut function_creator_map: HashMap<String, FunctionCreator> = HashMap::new();
+        function_creator_map.insert("+".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Add{}) });
+        function_creator_map.insert("-".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sub{}) });
         Self {
-            function_idx_map,
-        }
+            function_creator_map
+        }        
     }
 
-    pub fn get_functor(&self) -> Option<&dyn Functor> {
-        match self.function_idx_map.get("+") {
-            Some(id) => {
-                Some(ALL_FUNCTIONS[*id])
+    pub fn get_functor(&self, name: &String) -> Option<Box<dyn Functor>> {
+        match self.function_creator_map.get(name) {
+            Some(fn_creator) => {
+                let functor = fn_creator(name);
+                Some(functor)
             }
             None => {
                 None
@@ -121,10 +125,5 @@ impl Functions {
 }
 
 lazy_static! {
-    pub static ref FUNCTIONS: Functions = Functions::new();
+    pub static ref FUNCTION_LIB: FunctionLib = FunctionLib::new();
 }
-
-// fn get_function() -> & 'static Functions {
-//     let f = &FUNCTIONS;
-//     return f;
-// }

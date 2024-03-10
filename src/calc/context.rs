@@ -1,48 +1,42 @@
-use super::functions::{Functor};
 
+use std::cell::RefCell;
 
-pub struct Context<'a> {
-    op_stack: Vec<& 'a dyn Functor>,
-    val_stack: Vec<i32>,
+use super::functions::Functor;
+use super::functions::FunctionId;
+
+thread_local! {
+    static CURRENT_CONTEXT: Context = Context { execution_stack: Stack::new() };
 }
 
-impl <'a> Context<'a>{
+
+pub struct Stack {
+    stack_buffer: Vec<i32>,
+}
+
+pub struct Context {
+    pub execution_stack: Stack,
+}
+
+impl Stack {
     pub fn new() -> Self {
         Self {
-            op_stack: Vec::new(),
-            val_stack: vec![0],
+            stack_buffer: Vec::new(),
         }
     }
 
-    pub fn push_op(&mut self, op: & 'a dyn Functor) {
-        self.op_stack.push(op);
-    }
-
-    pub fn pop_op(&mut self) {
-        self.op_stack.pop();
-    }
-
-    pub fn top_op(&self) -> Option<& & 'a dyn Functor> {
-        self.op_stack.last()
-    }
-
     pub fn push_val(&mut self, val: i32) {
-        self.val_stack.push(val);
+        self.stack_buffer.push(val);
     }
 
-    pub fn pop_val(&mut self) {
-        self.val_stack.pop();
+    pub fn pop_val(&mut self) -> Option<i32> {
+        self.stack_buffer.pop()
     }
 
     pub fn top_val(&self) -> Option<&i32> {
-        self.val_stack.last()
+        self.stack_buffer.last()
     }
 
-    pub fn op_size(&self) -> usize {
-        self.op_stack.len()
-    }
-
-    pub fn val_size(&self) -> usize {
-        self.val_stack.len()
+    pub fn size(&self) -> usize {
+        self.stack_buffer.len()
     }
 }
