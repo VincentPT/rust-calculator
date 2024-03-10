@@ -1023,6 +1023,7 @@ name = "rust-caculator"
 version = "0.1.0"
 dependencies = [
  "druid",
+ "lazy_static",
 ]
 
 [[package]]

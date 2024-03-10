@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use calc::Calculator;
+use calc::Functions;
 use calc::Feature;
 
 use druid::{
@@ -182,10 +183,10 @@ fn build_calc() -> impl Widget<AppData> {
         .with_spacer(1.0)
         .with_flex_child(
             flex_row(
-                op_button_label("sin".to_string()),
-                op_button_label("cos".to_string()),
-                op_button_label("tan".to_string()),
-                op_button_label( "⅟x".to_string()),
+                op_button_label("(".to_string()),
+                op_button_label(")".to_string()),
+                op_button_label("⅟x".to_string()),
+                op_button_label( "π".to_string()),
                 op_button('÷'), //
             ),
             1.0,
@@ -196,7 +197,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('7'),
                 digit_button('8'),
                 digit_button('9'),
-                op_button_label("x²".to_string()),
+                op_button_label("tan".to_string()),
                 op_button('×'),
             ),
             1.0,
@@ -207,7 +208,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('4'),
                 digit_button('5'),
                 digit_button('6'),
-                op_button_label("√".to_string()),
+                op_button_label("cos".to_string()),
                 op_button('−'),
             ),
             1.0,
@@ -218,7 +219,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('1'),
                 digit_button('2'),
                 digit_button('3'),
-                op_button_label("ln".to_string()),
+                op_button_label("sin".to_string()),
                 op_button('+'),
             ),
             1.0,
@@ -228,8 +229,8 @@ fn build_calc() -> impl Widget<AppData> {
             flex_row(
                 digit_button('0'),
                 op_button('.'),
-                op_button('e'),
-                op_button_label("π".to_string()),
+                op_button('√'),
+                op_button_label("x²".to_string()),
                 op_feature(Feature::Eval),
             ),
             1.0,
