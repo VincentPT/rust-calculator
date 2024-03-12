@@ -1,4 +1,4 @@
-use super::functions::Functor;
+use super::functions::{Functor, FUNCTION_LIB};
 use super::context::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -83,7 +83,7 @@ impl Evaluator {
             return self.put_operand(token);
         }
         
-        if !token.chars().next().unwrap().is_ascii_digit() {
+        if token.chars().next().unwrap().is_ascii_digit() {
             // functor is not allow leading by a digit
             return Err("Invalid token");
         }
@@ -92,16 +92,42 @@ impl Evaluator {
     }
 
     fn put_functor(&mut self, token: &String) -> Result<Option<f64>, &str> {
+        FUNCTION_LIB.get_functor(token).map(|functor| {
+            match self.top_op() {
+                Some(top) => {
+                    if functor.priority() < top.priority() {
+                        self.push_op(functor);
+                        // nothing need to compute then return none
+                        None
+                    }
+                    else {
+                        // compute the top functor, the result will be pushed to the stack
+                        top.execute();
 
-        Ok(None)
+                        // take away the top functor from the stack due to it is already done
+                        self.pop_op();
+
+                        // push the new functor to the stack
+                        self.push_op(functor);
+
+                        // read the result from top of the stack then return
+                        Some(self.excution_context.borrow().execution_stack.top_val().unwrap().clone())
+                    }
+                }
+                None => {
+                    self.push_op(functor);
+                    // nothing need to compute then return none
+                    None
+                }
+            }            
+        }).ok_or("No functor found")
     }
 
     fn put_operand(&mut self, token: &String) -> Result<Option<f64>, &str> {        
         token.parse::<f64>().map(|value| {
-            //CURRENT_CONTEXT.
+            self.excution_context.borrow_mut().execution_stack.push_val(value);
             Some(value)
-        }
-        ).map_err(|_| "Invalid token")
+        }).map_err(|_| "Invalid token")
     }
 
 }

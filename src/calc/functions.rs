@@ -1,5 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 use lazy_static::lazy_static;
+use std::rc::Rc;
+use crate::calc::context::Context;
 
 pub use usize as FunctionId;
 
@@ -39,17 +41,42 @@ pub trait Functor {
 
 /// A trait for a function with only one parameter
 pub trait UnaryFunctor : Functor {
-    fn compute(&self, a: i32) -> i32;
+    fn compute(&self, a: f64) -> f64;
     fn execute(&self) {
-        self.compute(0);
+        self.compute(0.0);
     }
 }
 
 /// A trait for a function with two parameters
 pub trait BinaryFunctor {
-    fn compute(&self, a: i32, b: i32) -> i32;
+    fn compute(&self, a: f64, b: f64) -> f64;
     fn execute(&self) {
-        self.compute(1, 2);
+        match Context::get_current() {
+            Some(rcctx) => {
+                let xxx = Rc::unwrap_or_clone(rcctx);
+                let mut ttt = xxx.borrow_mut();
+                let b = ttt.execution_stack.pop_val().unwrap();
+                let a = ttt.execution_stack.pop_val().unwrap();
+                let result = self.compute(a, b);
+                ttt.execution_stack.push_val(result);
+
+                // match Rc::try_unwrap(rcctx) {
+                //     Ok(refcell) => {
+                //         let mut ctx = refcell.borrow_mut();
+                //         let b = ctx.execution_stack.pop_val().unwrap();
+                //         let a = ctx.execution_stack.pop_val().unwrap();
+                //         let result = self.compute(a, b);
+                //         ctx.execution_stack.push_val(result);
+                //     },
+                //     Err(_) => {
+                //         panic!("Context is not unique");
+                //     }
+                // }
+            }
+            None => {
+                panic!("No context found");
+            }
+        };
     }
 }
 
@@ -68,8 +95,7 @@ impl Functor for Add {
     }
 }
 impl BinaryFunctor for Add {
-    fn compute(&self, a: i32, b: i32) -> i32 {
-        println!("{} + {} = {}", a, b, a + b);
+    fn compute(&self, a: f64, b: f64) -> f64 {
         a + b
     }
 }
@@ -89,8 +115,7 @@ impl Functor for Sub {
     }
 }
 impl BinaryFunctor for Sub {
-    fn compute(&self, a: i32, b: i32) -> i32 {
-        println!("{} - {} = {}", a, b, a - b);
+    fn compute(&self, a: f64, b: f64) -> f64 {
         a - b
     }
 }

@@ -39,6 +39,7 @@ impl AppData {
             },
             Err(s) => {
                 self.value = s.to_string();
+                self.history = caculator.build_history();
             }
         };
     }

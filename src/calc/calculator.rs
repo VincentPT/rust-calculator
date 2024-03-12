@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use super::{evaluator, Evaluator};
 
 pub struct Calculator {
-    count: u32,
     evaluator: Evaluator,
     constants_map: HashMap<String, String>,
     operand_token: String,
@@ -21,7 +20,6 @@ pub enum Feature {
 impl Calculator {
     pub fn new() -> Self {
         Self {
-            count: 0,
             evaluator: Evaluator::new(),
             constants_map: HashMap::new(),
             operand_token: String::new(),
@@ -45,7 +43,9 @@ impl Calculator {
 
         match res {
             Err(e) => Err(e),
-            Ok(t) => Ok(Some(t.unwrap().to_string().to_string()))
+            Ok(t) => {
+                Ok(t.map(|v| v.to_string()))
+            }
         }
     }
 
@@ -63,7 +63,7 @@ impl Calculator {
             return Err("Empty input");
         }
 
-        let mut immediate_result: Result<Option<String>, &str>;
+        let immediate_result: Result<Option<String>, &str>;
 
         loop {
             if input.len() == 1 {
@@ -89,7 +89,6 @@ impl Calculator {
     }
 
     pub fn perform_feature(&mut self, feature: &Feature) -> (Option<String>, Option<String>) {
-        let history = self.count.to_string();
         let value = match feature {
             Feature::CE => "CE".to_string(),
             Feature::C => "C".to_string(),
@@ -98,6 +97,6 @@ impl Calculator {
             Feature::Eval => "Eval".to_string(),
             Feature::DEL => "DEL".to_string(),
         };
-        (Some(history), Some(value))
+        (None, Some(value))
     }
 }
