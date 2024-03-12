@@ -29,12 +29,12 @@ impl Calculator {
         }
     }
 
-    fn expression_operand_input(&mut self, c: &char) -> Option<String> {        
+    fn expression_operand_input(&mut self, c: &char) -> Result<Option<String>, &str> {        
         self.operand_token.push(*c);
-        Some(self.operand_token.clone())
+        Ok(Some(self.operand_token.clone()))
     }
 
-    fn expression_token_input(&mut self, op_name: &String) -> Option<String> {
+    fn expression_token_input(&mut self, op_name: &String) -> Result<Option<String>, &str> {
         if !self.operand_token.is_empty() {
             self.evaluator.put_token(&self.operand_token);
             self.input_tokens.push(self.operand_token.clone());
@@ -44,44 +44,48 @@ impl Calculator {
         self.input_tokens.push(op_name.clone());
 
         match res {
-            Some(value) => Some(value.to_string()),
-            None => None
+            Err(e) => Err(e),
+            Ok(t) => Ok(Some(t.unwrap().to_string().to_string()))
         }
     }
 
-    fn build_history(&self) -> String {
+    pub fn build_history(&self) -> String {
         let mut history = String::new();
         for token in &self.input_tokens {
             history.push_str(token);
         }
+        history.push_str(&self.operand_token);
         history
     }
 
-    pub fn perform_exp_input(&mut self, input: String) -> (Option<String>, Option<String>) {
+    pub fn perform_exp_input(&mut self, input: String) -> Result<Option<String>, &str> {
         if input.is_empty() {
-            return (None, None);
+            return Err("Empty input");
         }
 
-        let mut immediate_result: Option<String> = None;
+        let mut immediate_result: Result<Option<String>, &str>;
 
-        if input.len() == 1 {
-            let c = input.chars().next().unwrap();
-            if c.is_ascii_alphanumeric() || c == '.' {
-                immediate_result = self.expression_operand_input(&c);
-            }
-            else {
-                let constant = self.constants_map.get(&c.to_string());
-                match constant {
-                    Some(value) => {
-                        immediate_result = self.expression_token_input(&value.clone());
-                    }
-                    None => {
-                        immediate_result = self.expression_token_input(&input);
-                    }
+        loop {
+            if input.len() == 1 {
+                let c = input.chars().next().unwrap();
+                if c.is_ascii_alphanumeric() || c == '.' {
+                    immediate_result = self.expression_operand_input(&c);
+                    break;
                 }
             }
+            let constant = self.constants_map.get(&input);
+            match constant {
+                Some(value) => {
+                    immediate_result = self.expression_token_input(&value.clone());
+                }
+                None => {
+                    immediate_result = self.expression_token_input(&input);
+                }
+            }
+            break;
         }
-        (Some(self.build_history()), immediate_result)
+        
+        immediate_result
     }
 
     pub fn perform_feature(&mut self, feature: &Feature) -> (Option<String>, Option<String>) {

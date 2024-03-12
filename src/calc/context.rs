@@ -1,20 +1,39 @@
 
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
-
-use super::functions::Functor;
-use super::functions::FunctionId;
+use std::rc::Rc;
 
 thread_local! {
-    static CURRENT_CONTEXT: Context = Context { execution_stack: Stack::new() };
+    // default context for a thread
+    pub static CURRENT_CONTEXT:  RefCell<Option<Rc<RefCell<Context>>>> = RefCell::new(None);
 }
 
 
 pub struct Stack {
-    stack_buffer: Vec<i32>,
+    stack_buffer: Vec<f64>,
 }
 
 pub struct Context {
     pub execution_stack: Stack,
+}
+
+impl Context {
+    pub fn new() -> Self {
+        Self {
+            execution_stack: Stack::new(),
+        }
+    }
+    pub fn make_current(context: Rc<RefCell<Context>>) {
+        CURRENT_CONTEXT.with(|c| {
+            *c.borrow_mut() = Some(context);
+        });
+    }
+
+    pub fn get_current() -> Option<Rc<RefCell<Context>>> {
+        CURRENT_CONTEXT.with(|c| {
+            c.borrow().as_ref().map(|c| c.clone())
+        })
+    }
 }
 
 impl Stack {
@@ -24,15 +43,15 @@ impl Stack {
         }
     }
 
-    pub fn push_val(&mut self, val: i32) {
+    pub fn push_val(&mut self, val: f64) {
         self.stack_buffer.push(val);
     }
 
-    pub fn pop_val(&mut self) -> Option<i32> {
+    pub fn pop_val(&mut self) -> Option<f64> {
         self.stack_buffer.pop()
     }
 
-    pub fn top_val(&self) -> Option<&i32> {
+    pub fn top_val(&self) -> Option<&f64> {
         self.stack_buffer.last()
     }
 

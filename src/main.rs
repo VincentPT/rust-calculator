@@ -24,16 +24,23 @@ struct AppData {
 impl AppData {
     fn on_exp_key(&mut self, key: String) {
         let mut caculator = self.caculator.borrow_mut();
-        let state: (Option<String>, Option<String>) = caculator.perform_exp_input(key);
-        match state.0 {
-            Some(history) => self.history = history,
-            None => {}
-        }
-        match state.1 {
-            Some(value) => self.value = value,
-            None => {}
-            
-        }
+        let state = caculator.perform_exp_input(key);
+        match state {
+            Ok(t) => {
+                match t {
+                    Some(res) => {
+                        self.history = caculator.build_history();
+                        self.value = res;
+                    }
+                    None => {
+                        self.history = caculator.build_history();
+                    }
+                }
+            },
+            Err(s) => {
+                self.value = s.to_string();
+            }
+        };
     }
 
     fn on_feature_key(&mut self, feature: &Feature) {
