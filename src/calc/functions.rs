@@ -49,7 +49,7 @@ pub trait UnaryFunctor : Functor {
 
 /// A trait for a function with two parameters
 pub trait BinaryFunctor {
-    fn compute(&self, a: f64, b: f64) -> f64;
+    fn compute(&self, a: f64, b: f64) -> Result<f64, &str>;
     fn execute(&self) {
         Context::with_current(|c| {
             let mut t = c.borrow_mut();
@@ -60,7 +60,13 @@ pub trait BinaryFunctor {
             let b = t.execution_stack.pop_val().unwrap();
             let a = t.execution_stack.pop_val().unwrap();
             let result = self.compute(a, b);
-            t.execution_stack.push_val(result);
+            match result {
+                Ok(v) => t.execution_stack.push_val(v),
+                Err(s) => {
+                    t.error_message = s.to_string();
+                    t.error_detected = true;
+                }
+            }
         });
     }
 }
@@ -80,8 +86,8 @@ impl Functor for Add {
     }
 }
 impl BinaryFunctor for Add {
-    fn compute(&self, a: f64, b: f64) -> f64 {
-        a + b
+    fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
+        Ok(a + b)
     }
 }
 
@@ -100,8 +106,8 @@ impl Functor for Sub {
     }
 }
 impl BinaryFunctor for Sub {
-    fn compute(&self, a: f64, b: f64) -> f64 {
-        a - b
+    fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
+        Ok(a - b)
     }
 }
 
@@ -120,8 +126,8 @@ impl Functor for Mul {
     }
 }
 impl BinaryFunctor for Mul {
-    fn compute(&self, a: f64, b: f64) -> f64 {
-        a * b
+    fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
+        Ok(a * b)
     }
 }
 
@@ -140,8 +146,8 @@ impl Functor for Div {
     }
 }
 impl BinaryFunctor for Div {
-    fn compute(&self, a: f64, b: f64) -> f64 {
-        a / b
+    fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
+        if b == 0.0 {Err("divide to zero")} else {Ok(a / b)}
     }
 }
 

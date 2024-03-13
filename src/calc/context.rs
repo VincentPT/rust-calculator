@@ -14,6 +14,7 @@ pub struct Stack {
 pub struct Context {
     pub execution_stack: Stack,
     pub error_detected: bool,
+    pub error_message: String,
 }
 
 impl Context {
@@ -21,6 +22,7 @@ impl Context {
         Self {
             execution_stack: Stack::new(),
             error_detected: false,
+            error_message: String::new(),
         }
     }
     pub fn scope_current<F, T>(context:& RefCell<Context>, scope: F) -> T

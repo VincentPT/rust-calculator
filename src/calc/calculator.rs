@@ -31,7 +31,7 @@ impl Calculator {
         }
     }
 
-    fn expression_operand_input(&mut self, c: &char) -> Result<Option<String>, &str> {       
+    fn expression_operand_input(&mut self, c: &char) -> Result<Option<String>, String> {       
         if !self.last_result.is_empty() {
             // clear last result if user input first operand of the expression
             self.last_result.clear();
@@ -40,7 +40,7 @@ impl Calculator {
         Ok(Some(self.operand_token.clone()))
     }
 
-    fn expression_constant_input(&mut self, const_val: &String) -> Result<Option<String>, &str> {
+    fn expression_constant_input(&mut self, const_val: &String) -> Result<Option<String>, String> {
         // just clear the temporary input if user pick another constant
         self.operand_token.clear();
         // clear last result we don't need it anymore
@@ -49,15 +49,10 @@ impl Calculator {
         let res = self.evaluator.put_token(const_val);
         self.input_tokens.push(const_val.clone());
 
-        match res {
-            Err(e) => Err(e),
-            Ok(t) => {
-                Ok(t.map(|v| v.to_string()))
-            }
-        }
+        res.map(|t| t.map(|v| v.to_string()))
     }
 
-    fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, &str> {
+    fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, String> {
         if !self.last_result.is_empty() {
             self.operand_token = self.last_result.clone();
             self.last_result.clear();
@@ -92,13 +87,13 @@ impl Calculator {
         }        
     }
 
-    pub fn perform_exp_input(&mut self, input: String) -> Result<Option<String>, &str> {
+    pub fn perform_exp_input(&mut self, input: String) -> Result<Option<String>, String> {
         if input.is_empty() {
-            return Err("Empty input");
+            return Err("Empty input".to_string());
         }
         self.temp_history.clear();
 
-        let immediate_result: Result<Option<String>, &str>;
+        let immediate_result: Result<Option<String>, String>;
 
         loop {
             if input.len() == 1 {
@@ -123,7 +118,7 @@ impl Calculator {
         immediate_result
     }
 
-    pub fn perform_feature(&mut self, feature: &Feature) -> Result<Option<String>, &str> {
+    pub fn perform_feature(&mut self, feature: &Feature) -> Result<Option<String>, String> {
         match feature {
             Feature::CE => {
                 self.reset()
@@ -138,7 +133,7 @@ impl Calculator {
         }
     }
 
-    fn eval(&mut self) -> Result<Option<String>, &str> {
+    fn eval(&mut self) -> Result<Option<String>, String> {
         let mut temp_token_updated = false;
         if !self.operand_token.is_empty() {
             let _ = self.evaluator.put_token(&self.operand_token);
@@ -178,7 +173,7 @@ impl Calculator {
         }
     }
 
-    fn reset(&mut self) -> Result<Option<String>, &str> {
+    pub fn reset(&mut self) -> Result<Option<String>, String> {
         self.last_result = "0".to_string();
         self.operand_token.clear();
         self.input_tokens.clear();

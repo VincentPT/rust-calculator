@@ -38,8 +38,10 @@ impl AppData {
                 }
             },
             Err(s) => {
-                self.value = s.to_string();
+                self.value = s;
                 self.history = caculator.build_history();
+
+                let _ = caculator.reset();
             }
         };
     }
@@ -62,6 +64,8 @@ impl AppData {
             Err(s) => {
                 self.value = s.to_string();
                 self.history = caculator.build_history();
+
+                let _ = caculator.reset();
             }
         };
     }

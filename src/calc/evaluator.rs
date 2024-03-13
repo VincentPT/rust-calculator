@@ -81,9 +81,9 @@ impl Evaluator {
         })
     }
 
-    pub fn put_token(&mut self, token: &String) -> Result<Option<f64>, &str>{
+    pub fn put_token(&mut self, token: &String) -> Result<Option<f64>, String>{
         if token.is_empty() {
-            return Err("Empty token");
+            return Err("Empty token".to_string());
         }
         if is_decimal(token) {
             return self.put_operand(token);
@@ -91,30 +91,43 @@ impl Evaluator {
         
         if token.chars().next().unwrap().is_ascii_digit() {
             // functor is not allow leading by a digit
-            return Err("Invalid token");
+            return Err("Invalid token".to_string());
         }
         
         self.put_functor(token)
     }
 
-    fn put_functor(&mut self, token: &String) -> Result<Option<f64>, &str> {
-        FUNCTION_LIB.get_functor(token).map(|functor| {
-            match self.top_op() {
-                Some(top) => {
-                    if functor.priority() < top.priority() {
-                        self.push_op(functor);
-                        // nothing need to compute then return none
-                        None
+    fn put_functor(&mut self, token: &String) -> Result<Option<f64>, String> {
+        let funtor_opt = FUNCTION_LIB.get_functor(token);
+        if funtor_opt.is_none() {
+            return Err("No functor found".to_string());
+        }
+        let functor = funtor_opt.unwrap();
+
+        match self.top_op() {
+            Some(top) => {
+                if functor.priority() < top.priority() {
+                    self.push_op(functor);
+                    // nothing need to compute then return none
+                    Ok(None)
+                }
+                else {
+                    // compute the top functor, the result will be pushed to the stack
+                    Context::scope_current(&self.excution_context, |_| {
+                        // execute function require an execution context.
+                        // So, we must ensure it will be use the current context in stead of the default one.
+                        // By bounding it by using the scope_current function, we can ensure the current context will be used.
+                        top.execute();
+                    });
+                    if self.excution_context.borrow().error_detected {
+                        if self.excution_context.borrow().error_message.is_empty() {
+                            Err("Error".to_string())
+                        }
+                        else {
+                            return Err(self.excution_context.borrow().error_message.clone())
+                        }
                     }
                     else {
-                        // compute the top functor, the result will be pushed to the stack
-                        Context::scope_current(&self.excution_context, |_| {
-                            // execute function require an execution context.
-                            // So, we must ensure it will be use the current context in stead of the default one.
-                            // By bounding it by using the scope_current function, we can ensure the current context will be used.
-                            top.execute();
-                        });
-
                         // take away the top functor from the stack due to it is already done
                         self.pop_op();
 
@@ -122,23 +135,23 @@ impl Evaluator {
                         self.push_op(functor);
 
                         // read the result from top of the stack then return
-                        Some(self.excution_context.borrow().execution_stack.top_val().unwrap().clone())
+                        Ok(Some(self.excution_context.borrow().execution_stack.top_val().unwrap().clone()))
                     }
                 }
-                None => {
-                    self.push_op(functor);
-                    // nothing need to compute then return none
-                    None
-                }
-            }            
-        }).ok_or("No functor found")
+            }
+            None => {
+                self.push_op(functor);
+                // nothing need to compute then return none
+                Ok(None)
+            }
+        }
     }
 
-    fn put_operand(&mut self, token: &String) -> Result<Option<f64>, &str> {        
+    fn put_operand(&mut self, token: &String) -> Result<Option<f64>, String> {        
         token.parse::<f64>().map(|value| {
             self.excution_context.borrow_mut().execution_stack.push_val(value);
             Some(value)
-        }).map_err(|_| "Invalid token")
+        }).map_err(|_| "Invalid token".to_string())
     }
 
 }
