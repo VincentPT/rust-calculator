@@ -75,7 +75,10 @@ impl Calculator {
         let mut prefer_op_fisrt = false;
         match funtor_opt {
             Some(f) => {
-                if f.arg_count() == 1 {
+                if f.id() == ID_SQR {     
+                    let _ = self.push_temp_input();           
+                }
+                else if f.arg_count() == 1 {
                     prefer_op_fisrt = true;
                 }
                 else if f.id() == ID_OPEN_BRACKET {

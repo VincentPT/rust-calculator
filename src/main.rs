@@ -226,7 +226,7 @@ fn build_calc() -> impl Widget<AppData> {
             flex_row(
                 op_button_label("(".to_string()),
                 op_button_label(")".to_string()),
-                op_button_label("⅟x".to_string()),
+                op_button_label_id("⅟x".to_string(), "⅟".to_string()),
                 op_button_label( "π".to_string()),
                 op_button_label_id("÷".to_string(), "/".to_string()), //
             ),
@@ -271,7 +271,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('0'),
                 op_button_label(".".to_string()),
                 op_button_label("√".to_string()),
-                op_button_label("x²".to_string()),
+                op_button_label_id("x²".to_string(), "²".to_string()),
                 op_feature(Feature::Eval),
             ),
             1.0,

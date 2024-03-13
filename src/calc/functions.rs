@@ -26,6 +26,8 @@ pub const ID_TAN: FunctionId = 11;
 pub const ID_LN: FunctionId = 12;
 pub const ID_OPEN_BRACKET: FunctionId = 13;
 pub const ID_CLOSE_BRACKET: FunctionId = 14;
+pub const ID_SQR: FunctionId = 15;
+pub const ID_INV: FunctionId = 16;
 
 const PRIODITY_ADDITIVE: i32 = 6;
 const PRIODITY_MULTIPLICATIVE: i32 = 5;
@@ -288,6 +290,79 @@ impl UnaryFunctor for Tan {
     }
 }
 
+/// sqrt function
+pub struct Sqrt {}
+impl Functor for Sqrt {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_SQRT
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Sqrt {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        if a < 0.0 {
+            Err("Square root of negative number is undefined")
+        } else {
+            Ok(a.sqrt())
+        }
+    }
+}
+
+/// sqr function
+pub struct Sqr {}
+impl Functor for Sqr {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_SQR
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Sqr {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        Ok(a * a)
+    }
+}
+/// 1/x function
+pub struct Inv {}
+impl Functor for Inv {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_INV
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Inv {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        if a == 0.0 {
+            Err("Divide to zero")
+        } else {
+            Ok(1.0 / a)
+        }
+    }
+}
+
 
 type FunctionCreator = fn(&String) -> Box<dyn Functor>;
 
@@ -305,6 +380,9 @@ impl FunctionLib {
         function_creator_map.insert("sin".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sin{}) });
         function_creator_map.insert("cos".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Cos{}) });
         function_creator_map.insert("tan".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Tan{}) });
+        function_creator_map.insert("√".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sqrt{}) });
+        function_creator_map.insert("²".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sqr{}) });
+        function_creator_map.insert("⅟".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Inv{}) });
         function_creator_map.insert("(".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(OpenBracket{}) });
         function_creator_map.insert(")".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(CloseBracket{}) });
         Self {
