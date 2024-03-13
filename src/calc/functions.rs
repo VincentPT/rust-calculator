@@ -36,14 +36,30 @@ pub trait Functor {
     fn execute(&self);
     fn priority(&self) -> i32;
     fn id(&self) -> FunctionId;
+    fn arg_count(&self) -> i32;
 }
 
 
 /// A trait for a function with only one parameter
 pub trait UnaryFunctor : Functor {
-    fn compute(&self, a: f64) -> f64;
+    fn compute(&self, a: f64) -> Result<f64, &str>;
     fn execute(&self) {
-        self.compute(0.0);
+        Context::with_current(|c| {
+            let mut t = c.borrow_mut();
+            if t.execution_stack.size() < 1 {
+                t.error_detected = true;
+                return;
+            }
+            let a = t.execution_stack.pop_val().unwrap();
+            let result = self.compute(a);
+            match result {
+                Ok(v) => t.execution_stack.push_val(v),
+                Err(s) => {
+                    t.error_message = s.to_string();
+                    t.error_detected = true;
+                }
+            }
+        });
     }
 }
 
@@ -70,7 +86,6 @@ pub trait BinaryFunctor {
         });
     }
 }
-
 /// Add function
 pub struct Add {
 }
@@ -83,6 +98,9 @@ impl Functor for Add {
     }
     fn priority(&self) -> i32 {
         PRIODITY_ADDITIVE
+    }
+    fn arg_count(&self) -> i32 {
+        2
     }
 }
 impl BinaryFunctor for Add {
@@ -104,6 +122,9 @@ impl Functor for Sub {
     fn priority(&self) -> i32 {
         PRIODITY_ADDITIVE
     }
+    fn arg_count(&self) -> i32 {
+        2
+    }
 }
 impl BinaryFunctor for Sub {
     fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
@@ -123,6 +144,9 @@ impl Functor for Mul {
     }
     fn priority(&self) -> i32 {
         PRIODITY_MULTIPLICATIVE
+    }
+    fn arg_count(&self) -> i32 {
+        2
     }
 }
 impl BinaryFunctor for Mul {
@@ -144,10 +168,82 @@ impl Functor for Div {
     fn priority(&self) -> i32 {
         PRIODITY_MULTIPLICATIVE
     }
+    fn arg_count(&self) -> i32 {
+        2
+    }
 }
 impl BinaryFunctor for Div {
     fn compute(&self, a: f64, b: f64) -> Result<f64, &str> {
         if b == 0.0 {Err("divide to zero")} else {Ok(a / b)}
+    }
+}
+
+/// sin function
+pub struct Sin {
+}
+impl Functor for Sin {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_SIN
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Sin {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        Ok(a.sin())
+    }
+}
+
+/// cos function
+pub struct Cos {
+}
+impl Functor for Cos {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_COS
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Cos {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        Ok(a.cos())
+    }
+}
+
+/// tan function
+pub struct Tan {
+}
+impl Functor for Tan {
+    fn execute(&self) {
+        UnaryFunctor::execute(self);
+    }
+    fn id(&self) -> FunctionId {
+        ID_TAN
+    }
+    fn priority(&self) -> i32 {
+        PRIODITY_UNARY_OP
+    }
+    fn arg_count(&self) -> i32 {
+        1
+    }
+}
+impl UnaryFunctor for Tan {
+    fn compute(&self, a: f64) -> Result<f64, &str> {
+        Ok(a.tan())
     }
 }
 
@@ -165,6 +261,9 @@ impl FunctionLib {
         function_creator_map.insert("-".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sub{}) });
         function_creator_map.insert("*".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Mul{}) });
         function_creator_map.insert("/".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Div{}) });
+        function_creator_map.insert("sin".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sin{}) });
+        function_creator_map.insert("cos".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Cos{}) });
+        function_creator_map.insert("tan".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Tan{}) });
         Self {
             function_creator_map
         }        

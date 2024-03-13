@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use super::functions::FUNCTION_LIB;
 
 use super::{is_decimal, Evaluator};
 
@@ -54,25 +55,47 @@ impl Calculator {
         Ok(Some(self.operand_token.clone()))
     }
 
-    fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, String> {
+    fn push_temp_input(&mut self) -> Option<String> {
+        let mut put_str : Option<String> = None;
         if !self.last_result.is_empty() {
             self.operand_token = self.last_result.clone();
             self.last_result.clear();
         }
         if !self.operand_token.is_empty() {
             let _ = self.evaluator.put_token(&self.operand_token);
+            put_str.replace(self.operand_token.clone());
             self.input_tokens.push(self.operand_token.clone());
-            self.operand_token.clear()
+            self.operand_token.clear();
         }
+        put_str
+    }
+
+    fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, String> {
+        let funtor_opt = FUNCTION_LIB.get_functor(op_name);
+        let mut prefer_op_fisrt = false;
+        if funtor_opt.is_some() && funtor_opt.unwrap().arg_count() == 1 {            
+            prefer_op_fisrt = true;
+        }
+        else {
+            self.push_temp_input();
+        }
+       
         let res = self.evaluator.put_token(op_name);
         self.input_tokens.push(op_name.clone());
 
-        match res {
-            Err(e) => Err(e),
-            Ok(t) => {
-                Ok(t.map(|v| v.to_string()))
+        if prefer_op_fisrt {
+            let res = self.push_temp_input();
+            Ok(res)
+        }
+        else {
+            match res {
+                Err(e) => Err(e),
+                Ok(t) => {
+                    Ok(t.map(|v| v.to_string()))
+                }
             }
         }
+        
     }
 
     pub fn build_history(&self) -> String {
