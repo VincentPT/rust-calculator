@@ -50,10 +50,8 @@ impl Calculator {
         // clear last result we don't need it anymore
         self.last_result.clear();
 
-        let res = self.evaluator.put_token(const_val);
-        self.input_tokens.push(const_val.clone());
-
-        res.map(|t| t.map(|v| v.to_string()))
+        self.operand_token = const_val.clone();
+        Ok(Some(self.operand_token.clone()))
     }
 
     fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, String> {
@@ -294,5 +292,9 @@ impl Calculator {
             },
             None => Ok(None)
         }
+    }
+
+    pub fn add_constant(&mut self, name: String, value: String) {
+        self.constants_map.insert(name, value);
     }
 }

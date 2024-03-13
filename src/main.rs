@@ -292,6 +292,8 @@ pub fn main() {
         caculator: Rc::new(RefCell::new(Calculator::new()))
     };
 
+    app_data.caculator.borrow_mut().add_constant("π".to_string(), "3.14159265358979323846".to_string());
+
     AppLauncher::with_window(window)
         .log_to_console()
         .launch(app_data)
