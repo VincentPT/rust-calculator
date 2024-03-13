@@ -46,19 +46,49 @@ impl AppData {
 
     fn on_feature_key(&mut self, feature: &Feature) {
         let mut caculator = self.caculator.borrow_mut();
-        let state: (Option<String>, Option<String>) = caculator.perform_feature(feature);
-        match state.0 {
-            Some(history) => self.history = history,
-            None => {}
-        }
-        match state.1 {
-            Some(value) => self.value = value,
-            None => {}
-        }
+        let state = caculator.perform_feature(feature);
+        match state {
+            Ok(t) => {
+                match t {
+                    Some(res) => {
+                        self.history = caculator.build_history();
+                        self.value = res;
+                    }
+                    None => {
+                        self.history = caculator.build_history();
+                    }
+                }
+            },
+            Err(s) => {
+                self.value = s.to_string();
+                self.history = caculator.build_history();
+            }
+        };
+    }
+
+    fn handle_result(&mut self, result: Result<Option<String>, &str>) {
+        let mut caculator = self.caculator.borrow_mut();
+        match result {
+            Ok(t) => {
+                match t {
+                    Some(res) => {
+                        self.history = caculator.build_history();
+                        self.value = res;
+                    }
+                    None => {
+                        self.history = caculator.build_history();
+                    }
+                }
+            },
+            Err(s) => {
+                self.value = s.to_string();
+                self.history = caculator.build_history();
+            }
+        };
     }
 }
 
-fn op_button_label(label: String) -> impl Widget<AppData> {
+fn op_button_label_id(label: String, id: String) -> impl Widget<AppData> {
     let painter = Painter::new(|ctx, _, env| {
         let bounds = ctx.size().to_rect();
 
@@ -73,12 +103,16 @@ fn op_button_label(label: String) -> impl Widget<AppData> {
         }
     });
 
-    Label::new(label.clone())
+    Label::new(label)
         .with_text_size(24.)
         .center()
         .background(painter)
         .expand()
-        .on_click(move |_ctx, data: &mut AppData, _env| data.on_exp_key(label.clone()))
+        .on_click(move |_ctx, data: &mut AppData, _env| data.on_exp_key(id.clone()))
+}
+
+fn op_button_label(label: String) -> impl Widget<AppData> {
+    op_button_label_id(label.clone(), label)
 }
 
 fn op_feature(feature: Feature) -> impl Widget<AppData> {
@@ -113,10 +147,6 @@ fn op_feature(feature: Feature) -> impl Widget<AppData> {
         .background(painter)
         .expand()
         .on_click(move |_ctx, data: &mut AppData, _env| data.on_feature_key(&feature))
-}
-
-fn op_button(op: char) -> impl Widget<AppData> {
-    op_button_label(op.to_string())
 }
 
 fn digit_button(digit: char) -> impl Widget<AppData> {
@@ -194,7 +224,7 @@ fn build_calc() -> impl Widget<AppData> {
                 op_button_label(")".to_string()),
                 op_button_label("⅟x".to_string()),
                 op_button_label( "π".to_string()),
-                op_button('÷'), //
+                op_button_label_id("÷".to_string(), "/".to_string()), //
             ),
             1.0,
         )
@@ -205,7 +235,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('8'),
                 digit_button('9'),
                 op_button_label("tan".to_string()),
-                op_button('×'),
+                op_button_label_id("×".to_string(), "*".to_string()),
             ),
             1.0,
         )
@@ -216,7 +246,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('5'),
                 digit_button('6'),
                 op_button_label("cos".to_string()),
-                op_button('−'),
+                op_button_label_id("−".to_string(), "-".to_string()),
             ),
             1.0,
         )
@@ -227,7 +257,7 @@ fn build_calc() -> impl Widget<AppData> {
                 digit_button('2'),
                 digit_button('3'),
                 op_button_label("sin".to_string()),
-                op_button('+'),
+                op_button_label("+".to_string()),
             ),
             1.0,
         )
@@ -235,8 +265,8 @@ fn build_calc() -> impl Widget<AppData> {
         .with_flex_child(
             flex_row(
                 digit_button('0'),
-                op_button('.'),
-                op_button('√'),
+                op_button_label(".".to_string()),
+                op_button_label("√".to_string()),
                 op_button_label("x²".to_string()),
                 op_feature(Feature::Eval),
             ),

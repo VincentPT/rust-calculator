@@ -1,7 +1,6 @@
 use super::functions::{Functor, FUNCTION_LIB};
 use super::context::*;
 use std::cell::RefCell;
-use std::rc::Rc;
 
 pub fn is_decimal(s : &str) -> bool {
     if s.is_empty() {
@@ -41,20 +40,19 @@ pub fn is_decimal(s : &str) -> bool {
 }
 
 pub struct Evaluator {
-    excution_context: Rc<RefCell<Context>>,
+    excution_context: RefCell<Context>,
     op_stack: Vec<Box<dyn Functor>>,
 }
 
 impl Evaluator {
     pub fn new() -> Self {
         Self {
-            excution_context: Rc::new(RefCell::new(Context::new())),
+            excution_context: RefCell::new(Context::new()),
             op_stack: Vec::new()
         }
     }
 
     fn push_op(&mut self, op: Box<dyn Functor>) {
-        Context::make_current(self.excution_context.clone());
         self.op_stack.push(op);
     }
 
@@ -70,9 +68,17 @@ impl Evaluator {
         self.op_stack.len()
     }
 
-    pub fn evaluate(&mut self, input: &String) -> Option<f64> {
-        Context::make_current(self.excution_context.clone());
-        None
+    pub fn evaluate(&mut self) -> Option<f64> {        
+        Context::scope_current(&self.excution_context, |c| {
+            while self.op_stack.len() > 0 && c.borrow().error_detected == false {
+                let top: Box<dyn Functor> = self.op_stack.pop().unwrap();
+                top.execute();
+            }
+            if c.borrow().execution_stack.size() != 1 || c.borrow().error_detected {
+                return None;
+            }
+            c.borrow().execution_stack.top_val().map(|v| v.clone())
+        })
     }
 
     pub fn put_token(&mut self, token: &String) -> Result<Option<f64>, &str>{
@@ -102,7 +108,12 @@ impl Evaluator {
                     }
                     else {
                         // compute the top functor, the result will be pushed to the stack
-                        top.execute();
+                        Context::scope_current(&self.excution_context, |_| {
+                            // execute function require an execution context.
+                            // So, we must ensure it will be use the current context in stead of the default one.
+                            // By bounding it by using the scope_current function, we can ensure the current context will be used.
+                            top.execute();
+                        });
 
                         // take away the top functor from the stack due to it is already done
                         self.pop_op();

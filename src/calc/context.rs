@@ -1,72 +1,70 @@
 
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
+use std::cell::RefMut;
 
 thread_local! {
-    // default context for a thread
-    pub static CURRENT_CONTEXT:  RefCell<Option<Rc<RefCell<Context>>>> = RefCell::new(None);
+    // default context for a thread    
+    pub static CURRENT_CONTEXT: RefCell<Context> = RefCell::new(Context::new());
 }
 
-#[derive(Clone)]
 pub struct Stack {
-    stack_buffer: Rc<RefCell<Vec<f64>>>,
+    stack_buffer: Vec<f64>,
 }
-
-#[derive(Clone)]
 pub struct Context {
     pub execution_stack: Stack,
+    pub error_detected: bool,
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
             execution_stack: Stack::new(),
+            error_detected: false,
         }
     }
-    pub fn make_current(context: Rc<RefCell<Context>>) {
+    pub fn scope_current<F, T>(context:& RefCell<Context>, scope: F) -> T
+    where F: FnOnce(&RefCell<Context>) -> T {
         CURRENT_CONTEXT.with(|c| {
-            *c.borrow_mut() = Some(context);
-        });
+            c.swap(context);
+
+            let t = scope(c);
+
+            context.swap(c);
+            // return
+            t
+        })
     }
 
-    pub fn get_current() -> Option<Rc<RefCell<Context>>> {
-        // CURRENT_CONTEXT.with(|c| {
-        //     c.borrow().as_ref().map(|c| c.clone())
-        // })
-
+    pub fn with_current<F>(f: F)
+    where F: FnOnce(&RefCell<Context>)
+    {
         CURRENT_CONTEXT.with(|c| {
-            match c.borrow().as_ref() {
-                Some(rc) => {
-                    Some(rc.clone())
-                },
-                None => {
-                    None
-                }
-            }
-        })
+            f(c);
+        });
     }
 }
 
 impl Stack {
     pub fn new() -> Self {
         Self {
-            stack_buffer: Rc::new(RefCell::new(Vec::new())),
+            stack_buffer: Vec::new(),
         }
     }
 
     pub fn push_val(&mut self, val: f64) {
-        self.stack_buffer.borrow_mut().push(val);
+        self.stack_buffer.push(val);
     }
 
     pub fn pop_val(&mut self) -> Option<f64> {
-        self.stack_buffer.borrow_mut().pop()
+        self.stack_buffer.pop()
     }
 
-    pub fn top_val(&self) -> Option<f64> {
-        self.stack_buffer.borrow_mut().last().map(|f| *f)
+    pub fn top_val(&self) -> Option<&f64> {
+        self.stack_buffer.last()
     }
 
     pub fn size(&self) -> usize {
-        self.stack_buffer.borrow().len()
+        self.stack_buffer.len()
     }
 }
