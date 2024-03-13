@@ -1,15 +1,8 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 use lazy_static::lazy_static;
-use std::rc::Rc;
 use crate::calc::context::Context;
 
 pub use usize as FunctionId;
-
-
-/// static function instances
-const ALL_FUNCTIONS: [&dyn Functor; 2] = [&Add{}, &Sub{}];
-
-
 // all function ids, function id must be index of corresponding function in ALL_FUNCTIONS
 pub const ID_ADD: FunctionId = 0;
 pub const ID_SUB: FunctionId = 1;

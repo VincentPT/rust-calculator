@@ -69,27 +69,6 @@ impl AppData {
             }
         };
     }
-
-    fn handle_result(&mut self, result: Result<Option<String>, &str>) {
-        let mut caculator = self.caculator.borrow_mut();
-        match result {
-            Ok(t) => {
-                match t {
-                    Some(res) => {
-                        self.history = caculator.build_history();
-                        self.value = res;
-                    }
-                    None => {
-                        self.history = caculator.build_history();
-                    }
-                }
-            },
-            Err(s) => {
-                self.value = s.to_string();
-                self.history = caculator.build_history();
-            }
-        };
-    }
 }
 
 fn op_button_label_id(label: String, id: String) -> impl Widget<AppData> {
@@ -197,7 +176,7 @@ fn flex_row<T: Data>(
 
 fn build_calc() -> impl Widget<AppData> {
     let lb_history = Label::new(|data: &String, _env: &_| data.clone())
-        .with_text_size(14.0)
+        .with_text_size(10.0)
         .lens(AppData::history)
         .padding(5.0);
     let lb_result = Label::new(|data: &String, _env: &_| data.clone())

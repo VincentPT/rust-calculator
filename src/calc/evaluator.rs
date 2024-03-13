@@ -16,14 +16,14 @@ pub fn is_decimal(s : &str) -> bool {
         oc = iterator.next();
     }
     let mut i = 0;
-    let mut hasDot = false;
+    let mut has_dot = false;
     while oc.is_some() {
         c = oc.unwrap();
         if c == '.' {
-            if hasDot { // dot should has only one
+            if has_dot { // dot should has only one
                 return false;
             }
-            hasDot = true;
+            has_dot = true;
             if i == 0 { // dot is not allow to be first character
                 return false;
             }

@@ -1,7 +1,5 @@
 
 use std::cell::RefCell;
-use std::rc::{Rc, Weak};
-use std::cell::RefMut;
 
 thread_local! {
     // default context for a thread    
