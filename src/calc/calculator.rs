@@ -1,14 +1,16 @@
 use std::collections::HashMap;
 
-use super::Evaluator;
+use super::{is_decimal, Evaluator};
 
 pub struct Calculator {
     evaluator: Evaluator,
     constants_map: HashMap<String, String>,
     operand_token: String,
     last_result: String,
+    last_immediate: String,
     temp_history: String,
     input_tokens: Vec<String>,
+    memory: Option<String>,
 }
 pub enum Feature {
     CE,
@@ -28,6 +30,8 @@ impl Calculator {
             input_tokens: Vec::new(),
             last_result: "0".to_string(),
             temp_history: String::new(),
+            last_immediate: String::new(),
+            memory: None,
         }
     }
 
@@ -114,6 +118,13 @@ impl Calculator {
             }
             break;
         }
+
+        match immediate_result.clone() {
+            Ok(Some(v)) => {
+                self.last_immediate = v;
+            },
+            _ => {}
+        };
         
         immediate_result
     }
@@ -122,8 +133,8 @@ impl Calculator {
         match feature {
             Feature::CE => self.reset_temp(),
             Feature::C => self.reset(),
-            Feature::MS => Ok(None),
-            Feature::MR => Ok(None),
+            Feature::MS => self.memory_store(),
+            Feature::MR => self.memory_recover(),
             Feature::Eval => self.eval(),
             Feature::DEL => self.delete_one_char(),
         }
@@ -142,6 +153,7 @@ impl Calculator {
             Some(v) => {
                 // store the final result so that it can be used as the begin of next expression
                 self.last_result = v.to_string();
+                self.last_immediate = self.last_result.clone();
                 // reset the evaluator after evaluation
                 self.evaluator = Evaluator::new();
 
@@ -239,6 +251,7 @@ impl Calculator {
 
     pub fn reset(&mut self) -> Result<Option<String>, String> {
         self.last_result = "0".to_string();
+        self.last_immediate = "0".to_string();
         self.operand_token.clear();
         self.input_tokens.clear();
         self.evaluator = Evaluator::new();
@@ -254,11 +267,32 @@ impl Calculator {
         let ctx = self.evaluator.excution_context.borrow();
         let last_val_opt = ctx.execution_stack.top_val();
         match last_val_opt {
-            Some(v) => {                
-                Ok(Some(self.operand_token.clone()))
+            Some(v) => {
+                self.last_immediate = v.to_string();
+                Ok(Some(self.last_immediate.clone()))
             },
             None => Ok(Some("0".to_string()))
         }
     }
 
+    fn memory_store(&mut self) -> Result<Option<String>, String> {
+        if self.last_immediate.is_empty() {
+            return Ok(None);
+        }
+
+        if is_decimal(self.last_immediate.as_str()) {
+            self.memory.replace(self.last_immediate.clone());
+        }
+        Ok(None)
+    }
+
+    fn memory_recover(&mut self) -> Result<Option<String>, String> {
+        match self.memory.clone() {
+            Some(v) => {
+                self.operand_token = v.clone();
+                Ok(Some(v))
+            },
+            None => Ok(None)
+        }
+    }
 }
