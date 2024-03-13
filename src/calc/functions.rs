@@ -11,21 +11,21 @@ const ALL_FUNCTIONS: [&dyn Functor; 2] = [&Add{}, &Sub{}];
 
 
 // all function ids, function id must be index of corresponding function in ALL_FUNCTIONS
-const ID_ADD: FunctionId = 0;
-const ID_SUB: FunctionId = 1;
-const ID_MUL: FunctionId = 2;
-const ID_DIV: FunctionId = 3;
-const ID_MOD: FunctionId = 4;
-const ID_POW: FunctionId = 5;
-const ID_SQRT: FunctionId = 6;
-const ID_ABS: FunctionId = 7;
-const ID_NEG: FunctionId = 8;
-const ID_SIN: FunctionId = 9;
-const ID_COS: FunctionId = 10;
-const ID_TAN: FunctionId = 11;
-const ID_LN: FunctionId = 12;
-const ID_OPEN_BRACKET: FunctionId = 13;
-const ID_CLOSE_BRACKET: FunctionId = 14;
+pub const ID_ADD: FunctionId = 0;
+pub const ID_SUB: FunctionId = 1;
+pub const ID_MUL: FunctionId = 2;
+pub const ID_DIV: FunctionId = 3;
+pub const ID_MOD: FunctionId = 4;
+pub const ID_POW: FunctionId = 5;
+pub const ID_SQRT: FunctionId = 6;
+pub const ID_ABS: FunctionId = 7;
+pub const ID_NEG: FunctionId = 8;
+pub const ID_SIN: FunctionId = 9;
+pub const ID_COS: FunctionId = 10;
+pub const ID_TAN: FunctionId = 11;
+pub const ID_LN: FunctionId = 12;
+pub const ID_OPEN_BRACKET: FunctionId = 13;
+pub const ID_CLOSE_BRACKET: FunctionId = 14;
 
 const PRIODITY_ADDITIVE: i32 = 6;
 const PRIODITY_MULTIPLICATIVE: i32 = 5;
@@ -39,6 +39,47 @@ pub trait Functor {
     fn arg_count(&self) -> i32;
 }
 
+/// open bracket
+pub struct OpenBracket {}
+impl Functor for OpenBracket {
+    fn execute(&self) {
+        Context::with_current(|c| {
+            let mut t = c.borrow_mut();
+            t.error_detected = true;
+            t.error_message = "Open bracket is not a function".to_string();
+        });
+    }
+    fn priority(&self) -> i32 {
+        0
+    }
+    fn id(&self) -> FunctionId {
+        ID_OPEN_BRACKET
+    }
+    fn arg_count(&self) -> i32 {
+        0
+    }
+}
+
+/// close bracket
+pub struct CloseBracket {}
+impl Functor for CloseBracket {
+    fn execute(&self) {
+        Context::with_current(|c| {
+            let mut t = c.borrow_mut();
+            t.error_detected = true;
+            t.error_message = "Close bracket is not a function".to_string();
+        });
+    }
+    fn priority(&self) -> i32 {
+        999
+    }
+    fn id(&self) -> FunctionId {
+        ID_CLOSE_BRACKET
+    }
+    fn arg_count(&self) -> i32 {
+        0
+    }
+}
 
 /// A trait for a function with only one parameter
 pub trait UnaryFunctor : Functor {
@@ -264,6 +305,8 @@ impl FunctionLib {
         function_creator_map.insert("sin".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Sin{}) });
         function_creator_map.insert("cos".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Cos{}) });
         function_creator_map.insert("tan".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(Tan{}) });
+        function_creator_map.insert("(".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(OpenBracket{}) });
+        function_creator_map.insert(")".to_string(), |_: &String| -> Box<dyn Functor> { Box::new(CloseBracket{}) });
         Self {
             function_creator_map
         }        

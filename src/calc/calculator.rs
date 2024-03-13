@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use super::functions::FUNCTION_LIB;
+use super::functions::*;
 
 use super::{is_decimal, Evaluator};
 
@@ -73,12 +73,23 @@ impl Calculator {
     fn expression_op_input(&mut self, op_name: &String) -> Result<Option<String>, String> {
         let funtor_opt = FUNCTION_LIB.get_functor(op_name);
         let mut prefer_op_fisrt = false;
-        if funtor_opt.is_some() && funtor_opt.unwrap().arg_count() == 1 {            
-            prefer_op_fisrt = true;
-        }
-        else {
-            self.push_temp_input();
-        }
+        match funtor_opt {
+            Some(f) => {
+                if f.arg_count() == 1 {
+                    prefer_op_fisrt = true;
+                }
+                else if f.id() == ID_OPEN_BRACKET {
+                    self.operand_token.clear();
+                    self.last_result.clear();
+                }
+                else {
+                    let _ = self.push_temp_input();
+                }
+            },
+            None => {
+                let _ = self.push_temp_input();
+            }
+        };
        
         let res = self.evaluator.put_token(op_name);
         self.input_tokens.push(op_name.clone());

@@ -1,4 +1,4 @@
-use super::functions::{Functor, FUNCTION_LIB};
+use super::functions::*;
 use super::context::*;
 use std::cell::RefCell;
 
@@ -97,6 +97,26 @@ impl Evaluator {
         self.put_functor(token)
     }
 
+    fn eval_for_close_bracket(&mut self) -> Result<Option<f64>, String> {
+        let result = Context::scope_current(&self.excution_context, |c| {
+            while self.op_stack.len() > 0 {
+                let top = self.op_stack.pop().unwrap();
+                if top.id() == ID_OPEN_BRACKET {
+                    return Ok(c.borrow().execution_stack.top_val().map(|f| f.clone()));
+                }
+                top.execute();
+                if c.borrow().error_detected {
+                    if c.borrow().error_message.is_empty() {
+                        return Err("Error".to_string());
+                    }
+                    return Err(c.borrow().error_message.clone());
+                }
+            }
+            Err("No open bracket found".to_string())
+        });
+        result
+    }
+
     fn put_functor(&mut self, token: &String) -> Result<Option<f64>, String> {
         let funtor_opt = FUNCTION_LIB.get_functor(token);
         if funtor_opt.is_none() {
@@ -106,6 +126,13 @@ impl Evaluator {
 
         match self.top_op() {
             Some(top) => {
+                if functor.id() == ID_CLOSE_BRACKET {
+                    return self.eval_for_close_bracket();
+                }
+                if top.id() == ID_OPEN_BRACKET {
+                    self.push_op(functor);
+                    return Ok(None);
+                }
                 if functor.priority() < top.priority() {
                     self.push_op(functor);
                     // nothing need to compute then return none
