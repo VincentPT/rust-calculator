@@ -40,7 +40,7 @@ pub fn is_decimal(s : &str) -> bool {
 }
 
 pub struct Evaluator {
-    excution_context: RefCell<Context>,
+    pub excution_context: RefCell<Context>,
     op_stack: Vec<Box<dyn Functor>>,
 }
 

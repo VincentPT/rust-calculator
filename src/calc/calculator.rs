@@ -120,16 +120,12 @@ impl Calculator {
 
     pub fn perform_feature(&mut self, feature: &Feature) -> Result<Option<String>, String> {
         match feature {
-            Feature::CE => {
-                self.reset()
-            },
-            Feature::C => Ok(None),
+            Feature::CE => self.reset_temp(),
+            Feature::C => self.reset(),
             Feature::MS => Ok(None),
             Feature::MR => Ok(None),
-            Feature::Eval => {
-                self.eval()
-            },
-            Feature::DEL => Ok(None),
+            Feature::Eval => self.eval(),
+            Feature::DEL => self.delete_one_char(),
         }
     }
 
@@ -173,6 +169,74 @@ impl Calculator {
         }
     }
 
+    fn recaculate_after_delete(&mut self) -> Result<Option<String>, String> {
+        // reset the evaluator due to its state is one step forward
+        self.evaluator = Evaluator::new();
+
+        // recover evaluator to current state of inputs
+        let mut results = Vec::new();
+        for token in &self.input_tokens  {
+            let last_res = self.evaluator.put_token(token);
+            results.push(last_res);
+        }
+
+        if self.operand_token.is_empty() {
+            let mut last_val = 0.0;
+            let i_opt = results.iter().rev().position(|r| {
+                match r {
+                    Ok(Some(v)) => {
+                        last_val = *v;
+                        true
+                    },
+                    _ => false
+                }
+            });
+            
+            match i_opt {
+                Some(_) => {
+                    Ok(Some(last_val.to_string()))
+                },
+                None => Ok(Some("0".to_string()))
+            }
+        }
+        else {
+            // if temporary input is not empty then return the new temporary input
+            Ok(Some(self.operand_token.clone()))
+        }
+    }
+
+    fn delete_one_char(&mut self) -> Result<Option<String>, String> {
+
+        // try to delete one last char in temporary input...
+        match self.operand_token.pop() {
+            Some(_) => {
+                // ...if it's possible then return the new temporary input
+                if self.operand_token.is_empty() {
+                    self.recaculate_after_delete()
+                }
+                else {
+                    Ok(Some(self.operand_token.clone()))
+                }                
+            },
+            None => {
+                // ...if it's not possible then take input tokens to exmaine
+                if self.input_tokens.is_empty() {
+                    return Ok(None);
+                }
+                // take the last token from input tokens
+                let last_token = self.input_tokens.pop().unwrap();
+
+                // make it as temporary input
+                self.operand_token = last_token;
+
+                // delete one char from temporary input
+                self.operand_token.pop();
+                
+                self.recaculate_after_delete()
+            }            
+        }
+    }
+
     pub fn reset(&mut self) -> Result<Option<String>, String> {
         self.last_result = "0".to_string();
         self.operand_token.clear();
@@ -181,6 +245,20 @@ impl Calculator {
         self.temp_history.clear();
 
         Ok(Some(self.last_result.clone()))
+    }
+
+    fn reset_temp(&mut self) -> Result<Option<String>, String> {
+        self.operand_token.clear();
+        self.last_result.clear();
+
+        let ctx = self.evaluator.excution_context.borrow();
+        let last_val_opt = ctx.execution_stack.top_val();
+        match last_val_opt {
+            Some(v) => {                
+                Ok(Some(self.operand_token.clone()))
+            },
+            None => Ok(Some("0".to_string()))
+        }
     }
 
 }
